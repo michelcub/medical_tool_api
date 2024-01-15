@@ -59,3 +59,33 @@ exports.deletePaciente = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+exports.findPacienteByAnyField = async (req, res) => {
+    try {
+        const value = req.params.value;
+        if (!value) {
+            return res.status(400).json({ error: 'El valor de búsqueda no puede estar vacío' });
+        }
+        let query = {
+            $or: [
+                { nombre: new RegExp(value, 'i') },
+                { apellido: new RegExp(value, 'i') },
+                { email: new RegExp(value, 'i') },
+                { telefono: new RegExp(value, 'i') },
+                // Agrega aquí otros campos en los que deseas buscar
+            ]
+        };
+
+        const pacientes = await Paciente.find(query);
+
+        if (pacientes.length === 0) {
+            return res.status(404).json({ error: 'No se encontraron pacientes' });
+        }
+
+        res.json(pacientes);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: error.message });
+    }
+};
+

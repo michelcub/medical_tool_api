@@ -1,6 +1,10 @@
+
+const cors = require('cors');
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userControllers');
+
+router.use(cors());
 
 // Ruta para registrar usuario
 router.post('/register', userController.register);

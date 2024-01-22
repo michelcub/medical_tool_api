@@ -1,4 +1,5 @@
 // app.js
+require('dotenv').config()
 const express = require('express');
 const mongoose = require('mongoose');
 
@@ -11,7 +12,7 @@ const pacienteRoutes = require('./src/routes/patientRoutes');
 const app = express();
 app.use(express.json()); // para parsear body de tipo JSON
 
-mongoose.connect('mongodb://localhost:27017', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Conectado a MongoDB'))
   .catch(err => console.error(err));
 

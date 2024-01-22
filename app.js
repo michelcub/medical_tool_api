@@ -6,7 +6,6 @@ const mongoose = require('mongoose');
 const authRoutes = require('./src/routes/authRoutes')
 const pacienteRoutes = require('./src/routes/patientRoutes');
 
-
 /*import routes */
 
 const app = express();
@@ -18,6 +17,5 @@ mongoose.connect('mongodb://localhost:27017', { useNewUrlParser: true, useUnifie
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

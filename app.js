@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./src/routes/authRoutes')
 const pacienteRoutes = require('./src/routes/patientRoutes');
 const episodiosRoutes = require('./src/routes/episodioRoutes');
+const pagoRoutes = require('./src/routes/pagoRoutes');
 /*import routes */
 
 const app = express();
@@ -19,5 +20,6 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/episodio', episodiosRoutes);
+app.use('/api/pagos', pagoRoutes)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

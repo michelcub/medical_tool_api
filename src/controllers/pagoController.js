@@ -1,9 +1,11 @@
 // controllers/pagoController.js
+const moment = require('moment');
 const Pago = require('../models/Pago');
 
 exports.createPago = async (req, res) => {
     try {
         const nuevoPago = new Pago(req.body);
+        nuevoPago.fecha = moment().format('YYYY-MM-DD');
         await nuevoPago.save();
         res.status(201).send(nuevoPago);
     } catch (error) {

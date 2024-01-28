@@ -2,10 +2,19 @@
 const mongoose = require('mongoose');
 
 const pagoSchema = new mongoose.Schema({
-    usuarioId: {
+    paciente_id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'Usuario' // Asumiendo que tienes un modelo Usuario
+    },
+    doctor_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User' // este es el medico que crea la consulta
+    },
+    eployee_id:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User' // este es el empleado que cobra
     },
     monto: {
         type: Number,
@@ -18,6 +27,19 @@ const pagoSchema = new mongoose.Schema({
     cobrado: {
         type: Boolean,
         required: true,
+    },
+    metodo_pago: {
+        type: String,
+        enum: ['Efectivo', 'Tarjeta', 'Transferencia']
+    },
+    servicios: {
+        type: Array,
+        required: true
+    },
+    episodio_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'Episodio'
     }
 });
 

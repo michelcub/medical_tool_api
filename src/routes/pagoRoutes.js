@@ -1,14 +1,15 @@
 // routes/pagoRoutes.js
 const express = require('express');
 const cors = require('cors');
-const authenticate = require('../middleware/authenticate');
 const router = express.Router();
+const authenticate = require('../middleware/authenticate');
 const pagoController = require('../controllers/pagoController');
 
-cors(cors())
+router.use(cors());
 
-router.post('/pagos',authenticate, pagoController.createPago);
-
+router.post('/',authenticate, pagoController.createPago);
+router.get('/paciente/:pacienteId', authenticate, pagoController.getPagosByPacienteId);
+router.put('/:id',authenticate, pagoController.updatePago);
 // Aquí puedes agregar más rutas para otras operaciones
 
 module.exports = router;

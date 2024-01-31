@@ -8,6 +8,7 @@ const authRoutes = require('./src/routes/authRoutes')
 const pacienteRoutes = require('./src/routes/patientRoutes');
 const episodiosRoutes = require('./src/routes/episodioRoutes');
 const pagoRoutes = require('./src/routes/pagoRoutes');
+const citaRoutes = require('./src/routes/citaRoutes');
 /*import routes */
 
 const app = express();
@@ -21,5 +22,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/episodio', episodiosRoutes);
 app.use('/api/pagos', pagoRoutes)
+app.use('/api/citas', citaRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

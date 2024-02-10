@@ -9,6 +9,6 @@ const citasController = require('../controllers/citaControllers');
 router.use(cors());
 // Ruta para crear una nueva cita
 router.post('/', authenticate, citasController.crearCita);
-router.get('/:semana', authenticate, citasController.getCitas);
+router.get('/:semana/:year', authenticate, citasController.getCitas);
 
 module.exports = router;

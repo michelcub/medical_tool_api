@@ -15,7 +15,11 @@ exports.crearCita = async (req, res) => {
 
 exports.getCitas = async (req, res) => {
   try {
-    const citas = await Cita.find({semana: req.query.semana});
+    console.log('obteneinedo citas')
+    console.log('semana', req.query.semana)
+    console.log('year', req.query.year)
+    const citas = await Cita.find({semana: req.params.semana, year: req.params.year});
+    console.log('obteneinedo citas', citas)
     res.status(200).send(citas);
   } catch (error) {
     res.status(400).send(error);

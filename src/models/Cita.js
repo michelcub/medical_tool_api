@@ -11,7 +11,7 @@ const citaSchema = new mongoose.Schema({
     required: true
   },
   paciente: {
-    type: String,
+    type: Object,
     required: true
   },
     doctor: {
@@ -30,6 +30,10 @@ const citaSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    year: {
+        type: String,
+        required: true
+    }
 });
 
 const Cita = mongoose.model('Cita', citaSchema);

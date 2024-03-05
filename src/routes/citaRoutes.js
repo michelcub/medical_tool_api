@@ -10,5 +10,6 @@ router.use(cors());
 // Ruta para crear una nueva cita
 router.post('/', authenticate, citasController.crearCita);
 router.get('/:semana/:year', authenticate, citasController.getCitas);
+router.put('/:id', authenticate, citasController.updateCita);
 
 module.exports = router;

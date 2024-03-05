@@ -25,3 +25,16 @@ exports.getCitas = async (req, res) => {
     res.status(400).send(error);
   }
 }
+
+exports.updateCita = async (req, res) => {
+  try {
+    // Asegúrate de incluir la opción { new: true } para que la función retorne el documento actualizado.
+    const cita = await Cita.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!cita) {
+      return res.status(404).send({ message: 'Cita not found' });
+    }
+    res.status(200).send(cita);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};

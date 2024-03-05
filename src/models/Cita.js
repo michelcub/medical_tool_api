@@ -33,6 +33,14 @@ const citaSchema = new mongoose.Schema({
     year: {
         type: String,
         required: true
+    },
+    here: {
+        type: Boolean,
+        default: false
+    },
+    active: {
+        type: Boolean,
+        default: true
     }
 });
 

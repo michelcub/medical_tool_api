@@ -36,6 +36,10 @@ const userSchema = new mongoose.Schema({
     date_joined: { 
         type: Date, 
         default: Date.now 
+    },
+    file_name: { 
+        type: String, 
+        default: null 
     }
 });
 

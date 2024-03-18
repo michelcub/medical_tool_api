@@ -40,7 +40,12 @@ const pagoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'Episodio'
-    }
+    },
+    cita_id: {
+        type: String,
+        required: true,
+        ref: 'Cita'
+    },
 });
 
 module.exports = mongoose.model('Pago', pagoSchema);

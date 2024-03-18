@@ -1,5 +1,8 @@
 // models/episodio.js
 const mongoose = require('mongoose');
+const { circle } = require('pdfkit');
+
+
 
 const episodioSchema = new mongoose.Schema({
     paciente_id: String,
@@ -18,6 +21,7 @@ const episodioSchema = new mongoose.Schema({
     cobrado: Boolean,
     servicios: Array,
     date: String,
+    cita_id: String,
 });
 
 module.exports = mongoose.model('Episodio', episodioSchema);

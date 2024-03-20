@@ -1,4 +1,5 @@
 // controllers/episodioController.js
+const e = require('express');
 const moment = require('moment');
 
 // Ruta del archivo PDF de entrada y salida
@@ -13,7 +14,7 @@ const fs = require('fs').promises;
 
 
 
-const elementosParaAgregar = [
+let  elementosParaAgregar = [
   {
     type: 'unidades',
     texto: '2',
@@ -52,7 +53,7 @@ Nombre: Juan Pérez
 Fecha: 01/01/2021
     `,
     x: 370,
-    y: 724,
+    y: 704,
   },
   {
     type: 'fecha_receta',
@@ -107,56 +108,98 @@ Juan Pérez 01/01/2021
   },
 ];
 
-async function addTextToPdfAndSaveModifiedPageOnly() {
+function agregarSaltoLinea(texto, maxLongitud = 40) {
+  const segmentos = [];
+  let inicio = 0;
+
+  while (inicio < texto.length) {
+    // Determina el final del segmento considerando la longitud máxima
+    let fin = Math.min(inicio + maxLongitud, texto.length);
+    let corte = fin;
+
+    // Si no estamos al final del texto y el siguiente carácter no es un espacio,
+    // buscamos el último espacio en el segmento para cortar por ahí.
+    if (fin < texto.length && texto[fin] !== ' ') {
+      let ultimoEspacio = texto.lastIndexOf(' ', fin);
+      if (ultimoEspacio > inicio) {
+        corte = ultimoEspacio;
+      }
+    }
+
+    // Agrega el segmento actual a la lista de segmentos
+    segmentos.push(texto.slice(inicio, corte));
+
+    // Prepara `inicio` para la próxima iteración
+    // Si el corte fue en un espacio, empezar después de ese espacio
+    inicio = corte + (texto[corte] === ' ' ? 1 : 0);
+  }
+
+  return segmentos.join("\n");
+}
+
+
+
+async function modifyPdfWithAllChanges(inputPdfPath, outputPdfPath, modificaciones) {
   try {
     const inputPdfBytes = await fs.readFile(inputPdfPath);
+    const pdfDoc = await PDFDocument.load(inputPdfBytes);
+    console.log('modificaciones>>>>>>>>>>>>>>>>>>>>', JSON.stringify(modificaciones));
+    modificaciones.forEach(modificacion => {
+      const { pageIndex, elementosParaAgregar } = modificacion;
+      if (pageIndex < 0 || pageIndex >= pdfDoc.getPages().length) {
+        console.warn(`Índice de página fuera de rango: ${pageIndex}`);
+        return; // Continúa con la siguiente modificación si el índice está fuera de rango
+      }
 
-    const inputPdfDoc = await PDFDocument.load(inputPdfBytes);
+      const page = pdfDoc.getPages()[pageIndex];
+      console.log('page>>>>>>>>>>>>>>>>>>>>', modificacion);
+      elementosParaAgregar.forEach(({ texto, x, y, size }) => {
+        
+        console.log('texto>>>>>>>>>>>>>>>>>>>>', texto);
 
-    const firstPage = inputPdfDoc.getPages()[0];
-
-    elementosParaAgregar.forEach((elemento) => {
-      firstPage.drawText(elemento.texto, {
-        x: elemento.x,
-        y: elemento.y,
-        size: 12,
-        color: rgb(0, 0, 0), 
+        // Asumimos que todos los textos ya están correctamente convertidos a string
+        page.drawText(texto.toString(), {
+          x,
+          y,
+          size: size || 8,
+          color: rgb(0, 0, 0), // Por defecto, el texto es negro
+        });
       });
     });
 
-    const newPdfDoc = await PDFDocument.create();
-
-    const [importedPage] = await newPdfDoc.copyPages(inputPdfDoc, [0]);
-    
-    newPdfDoc.addPage(importedPage);
-
-    const modifiedPagePdfBytes = await newPdfDoc.save();
-
-    await fs.writeFile(outputPdfPath, modifiedPagePdfBytes);
-    
-    //removePageFromPdf(0)
-    console.log('Página modificada guardada con éxito en un nuevo archivo PDF.');
+    const modifiedPdfBytes = await pdfDoc.save();
+    await fs.writeFile(outputPdfPath, modifiedPdfBytes);
+    console.log('Documento PDF modificado guardado con éxito.');
   } catch (error) {
-    console.error('Error al agregar texto y guardar la página modificada:', error);
+    console.error('Error al modificar el documento PDF:', error);
   }
 }
 
 
-async function removePageFromPdf(pageIndex) {
+async function extraerPaginasPdf(inputPdfPath, inicio, final) {
   try {
-    const inputPdfBytes = await fs.readFile(inputPdfPath);
 
-    const pdfDoc = await PDFDocument.load(inputPdfBytes);
+      const existingPdfBytes = await fs.readFile(inputPdfPath);
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+      const pdfDocNuevo = await PDFDocument.create();
 
-    pdfDoc.removePage(pageIndex);
+      // Asegurar que los índices de página están dentro del rango del documento
+      const numeroPaginas = pdfDoc.getPageCount();
+      if (inicio < 1 || final > numeroPaginas) {
+          throw new Error('Rango de páginas fuera de límites.');
+      }
 
-    const modifiedPdfBytes = await pdfDoc.save();
+      // Las páginas en PDFDocument están indexadas desde 0
+      for (let i = inicio - 1; i < final; i++) {
+          const [copiedPage] = await pdfDocNuevo.copyPages(pdfDoc, [i]);
+          pdfDocNuevo.addPage(copiedPage);
+      }
 
-    await fs.writeFile(inputPdfPath, modifiedPdfBytes);
-
-    console.log(`Página ${pageIndex + 1} eliminada con éxito.`);
+      const pdfBytes = await pdfDocNuevo.save();
+      return Buffer.from(pdfBytes);
   } catch (error) {
-    console.error('Error al eliminar la página del PDF:', error);
+      console.error('Error al extraer páginas del PDF:', error);
+      throw error; // Re-lanzar el error para manejo externo
   }
 }
 
@@ -167,33 +210,61 @@ async function removePageFromPdf(pageIndex) {
 
 
 exports.createReceta = async (req, res) => {
-    try {
-
-        // Formatea la fecha actual al formato deseado (día-mes-año)
-        let paciente = await req.body.paciente;
-        let medicamento = await req.body.medicamento;
-        let duracion = await req.body.duracion;
-        let pauta = await req.body.pauta;
-        let unidades = await req.body.unidades;
-        let fecha_receta = await moment().format('DD-MM-YYYY');
-        let paciente_data = await req.body.paciente_data;
-
-        await console.log('--------------------------------')
-        await console.log('date', date)
-        await console.log('paciente', paciente)
-        await console.log('medicamento', medicamento)
-        await console.log('duracion', duracion)
-        await console.log('pauta', pauta)
-        await console.log('unidades', unidades)
-        await console.log('fecha_receta', fecha_receta)
-        await console.log('paciente_data', paciente_data)
-        await console.log('--------------------------------')
-
-        res.status(201).send(nuevoEpisodio);
-    } catch (error) {
-        res.status(500).send(error);
+  try {
+    if (!Array.isArray(req.body.recetas)) {
+      return res.status(400).send("El campo 'recetas' es requerido y debe ser un array.");
     }
-};
+    const recetas = req.body.recetas;
+    const paciente_id = req.body.paciente_id;
+    let doctor_id = req.body.doctor_id.replace(/"/g, ''); // Limpiar comillas
+    const date = req.body.date;
 
+    const inputPdfPath = `./recetas/${doctor_id}.pdf`;
+    const outputPdfPath = `./recetas/${doctor_id}.pdf`; // Usar un archivo modificado
+
+    let modificaciones = recetas.map((receta, index) => {
+      // Clonar la plantilla para cada receta
+      let elementosClonadosParaAgregar = JSON.parse(JSON.stringify(elementosParaAgregar));
+      
+      // Modificar los elementos clonados con los datos específicos de la receta
+      elementosClonadosParaAgregar = elementosClonadosParaAgregar.map(elemento => {
+        switch (elemento.type) {
+          case 'unidades':
+            elemento.texto = receta.unidades.toString(); // Asegurarse de que sea una cadena
+            break;
+          case 'pauta':
+            elemento.texto = receta.pauta;
+            break;
+          case 'medicamento':
+            elemento.texto =  agregarSaltoLinea(receta.nombre);
+            break;
+          case 'duracion':
+            elemento.texto = receta.duracion;
+            break;
+          case 'paciente_data':
+            elemento.texto = `DNI: ${paciente_id}\nNombre: Juan Pérez\nFecha: ${date}`;
+            break;
+          // Añadir más casos según sea necesario
+        }
+        return elemento;
+      });
+
+      return {
+        pageIndex: index, // Asumiendo que cada receta ocupa una página nueva
+        elementosParaAgregar: elementosClonadosParaAgregar
+      };
+    });
+
+    await modifyPdfWithAllChanges(inputPdfPath, outputPdfPath, modificaciones);
+    const pdfBuffer = await extraerPaginasPdf(inputPdfPath, 1, recetas.length);
+    res.set('Content-Type', 'application/pdf');
+    res.set('Content-Disposition', `attachment; filename=${doctor_id}.pdf`);
+    console.log('Receta creada correctamente.');
+    res.status(201).send(pdfBuffer);
+  } catch (error) {
+    console.error('Error al crear la receta:', error);
+    res.status(500).send("Error al crear la receta");
+  }
+};
 
 

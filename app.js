@@ -26,6 +26,6 @@ app.use('/api/episodio', episodiosRoutes);
 app.use('/api/pagos', pagoRoutes)
 app.use('/api/citas', citaRoutes);
 app.use('/api/uploads', uploadRoutes);
-app.use('/recetas', recetaRoutes);
+app.use('/api/recetas', recetaRoutes);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

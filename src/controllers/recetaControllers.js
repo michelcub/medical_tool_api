@@ -1,6 +1,8 @@
 // controllers/episodioController.js
 const e = require('express');
 const moment = require('moment');
+const Paciente = require('../models/Patient');
+const User = require('../models/User');
 
 // Ruta del archivo PDF de entrada y salida
 let inputPdfPath = 'test.pdf';
@@ -98,11 +100,11 @@ Juan Pérez 01/01/2021
 12345678A
     `,
     x: 370,
-    y: 314,
+    y: 290,
   },
   {
     type: 'fecha_receta',
-    texto: '01   01   2024',
+    texto: '01     01       2024',
     x: 490,
     y: 172
   },
@@ -150,12 +152,12 @@ async function modifyPdfWithAllChanges(inputPdfPath, outputPdfPath, modificacion
         console.warn(`Índice de página fuera de rango: ${pageIndex}`);
         return; // Continúa con la siguiente modificación si el índice está fuera de rango
       }
-
+      console.log('pageIndex>>>>>>>>>>>>>>>>>>>>', pageIndex);
       const page = pdfDoc.getPages()[pageIndex];
-      console.log('page>>>>>>>>>>>>>>>>>>>>', modificacion);
+      // console.log('page>>>>>>>>>>>>>>>>>>>>', modificacion);
       elementosParaAgregar.forEach(({ texto, x, y, size }) => {
         
-        console.log('texto>>>>>>>>>>>>>>>>>>>>', texto);
+        // console.log('texto>>>>>>>>>>>>>>>>>>>>', texto);
 
         // Asumimos que todos los textos ya están correctamente convertidos a string
         page.drawText(texto.toString(), {
@@ -204,7 +206,34 @@ async function extraerPaginasPdf(inputPdfPath, inicio, final) {
 }
 
 
-//addTextToPdfAndSaveModifiedPageOnly();
+
+async function eliminarPaginasPdf(inputPdfPath, paginaAEliminar, outputPdfPath) {
+  try {
+      const existingPdfBytes = await fs.readFile(inputPdfPath);
+      const pdfDoc = await PDFDocument.load(existingPdfBytes);
+
+      // Asegurar que el número de página a eliminar esté dentro del rango del documento
+      const numeroPaginas = pdfDoc.getPageCount();
+      if (paginaAEliminar < 1 || paginaAEliminar > numeroPaginas) {
+          throw new Error(`La página ${paginaAEliminar} está fuera de los límites del documento.`);
+      }
+
+      // Eliminar todas las páginas desde la primera hasta la página especificada
+      for (let i = 0; i < paginaAEliminar; i++) {
+          pdfDoc.removePage(0); // Siempre eliminamos la primera página después de cada iteración
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      await fs.writeFile(outputPdfPath, pdfBytes);
+      console.log(`Páginas eliminadas desde la primera hasta la página ${paginaAEliminar}, PDF guardado con éxito.`);
+  } catch (error) {
+      console.error('Error al eliminar páginas del PDF:', error);
+  }
+}
+
+
+
+
 
 
 
@@ -218,6 +247,16 @@ exports.createReceta = async (req, res) => {
     const paciente_id = req.body.paciente_id;
     let doctor_id = req.body.doctor_id.replace(/"/g, ''); // Limpiar comillas
     const date = req.body.date;
+
+    const doctor = await User.findById(doctor_id);
+    if (!doctor) {
+      return res.status(404).send("No se encontró al doctor con el ID proporcionado.");
+    }
+
+    const paciente = await Paciente.findById(paciente_id);
+    if (!paciente) {
+      return res.status(404).send("No se encontró al paciente con el ID proporcionado.");
+    }
 
     const inputPdfPath = `./recetas/${doctor_id}.pdf`;
     const outputPdfPath = `./recetas/${doctor_id}.pdf`; // Usar un archivo modificado
@@ -242,7 +281,10 @@ exports.createReceta = async (req, res) => {
             elemento.texto = receta.duracion;
             break;
           case 'paciente_data':
-            elemento.texto = `DNI: ${paciente_id}\nNombre: Juan Pérez\nFecha: ${date}`;
+            elemento.texto = `${paciente.documento_identidad.toUpperCase()}  ${paciente.nombre.toUpperCase() + ' ' + paciente.apellidos.toUpperCase()}\nFecha: ${paciente.fecha_nacimiento}`;
+            break;
+          case 'fecha_receta':
+            elemento.texto = moment(date).format('DD       MM       YYYY');
             break;
           // Añadir más casos según sea necesario
         }
@@ -257,6 +299,8 @@ exports.createReceta = async (req, res) => {
 
     await modifyPdfWithAllChanges(inputPdfPath, outputPdfPath, modificaciones);
     const pdfBuffer = await extraerPaginasPdf(inputPdfPath, 1, recetas.length);
+    
+    eliminarPaginasPdf(inputPdfPath, modificaciones.length, outputPdfPath);
     res.set('Content-Type', 'application/pdf');
     res.set('Content-Disposition', `attachment; filename=${doctor_id}.pdf`);
     console.log('Receta creada correctamente.');

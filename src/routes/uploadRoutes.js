@@ -54,6 +54,8 @@ router.post('/', authenticate, upload.single('pdffile'), (req, res, next) => {
         if (err) {
           return next(err);
         }
+        
+
         // Confirma el éxito de la carga y el renombramiento
         res.status(200).send({ message: 'Archivo PDF cargado y renombrado con éxito', filename: `${userId}.pdf` });
       });

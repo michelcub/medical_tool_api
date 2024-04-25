@@ -40,7 +40,31 @@ const userSchema = new mongoose.Schema({
     file_name: { 
         type: String, 
         default: null 
-    }
+    },
+    rol: { 
+        type: String, 
+        default: 'recepcionista' 
+    },
+    payment: { 
+        type: Number, 
+        default: 0 
+    },
+    phone: { 
+        type: String, 
+        default: null
+    },
+    address: { 
+        type: String, 
+        default: null 
+    },
+    city: { 
+        type: String, 
+        default: null 
+    },
+    num_colegiado: { 
+        type: String, 
+        default: null 
+    },
 });
 
 

@@ -31,7 +31,7 @@ exports.login = async (req, res) => {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
 
-        if (!user || !(await user.checkPassword(password))) {
+        if (!user || !(await user.checkPassword(password)) || !user.active) {
             console.log('Credenciales inválidas');
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
@@ -39,7 +39,7 @@ exports.login = async (req, res) => {
         // Crear token JWT
         const token = jwt.sign({ userId: user._id }, 'tu_secreto_jwt', { expiresIn: '1d' });
         console.log('inicio de sesion exitoso');
-        res.json({ message: 'Inicio de sesión exitoso', token, user: user._id, user_name: user.name });
+        res.json({ message: 'Inicio de sesión exitoso', token, user: user._id, user_name: user.name, user_last_name: user.last_name, user_email: user.email, user_rol: user.rol, user_num_colegiado: user.num_colegiado});
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: error.message });

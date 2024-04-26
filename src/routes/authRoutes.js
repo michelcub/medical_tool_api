@@ -13,4 +13,6 @@ router.post('/register', userController.register);
 // Ruta para iniciar sesión
 router.post('/login', userController.login);
 
+router.get('/users/:id', userController.getUsers);
+
 module.exports = router;

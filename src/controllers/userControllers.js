@@ -45,3 +45,19 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
+exports.getUsers = async (req, res) => {
+    try {
+       const user = await User.findById(req.params.id);
+         if (!user) {
+              console.log('Usuario no encontrado');
+              return res.status(404).json({ error: 'Usuario no encontrado' });
+         }
+            console.log('Usuario encontrado con éxito');
+            res.json(user);
+    }
+    catch (error) {
+        console.log(error);
+        res.status(400).json({ error: error.message });
+    }
+}
